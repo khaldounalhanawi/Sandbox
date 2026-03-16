@@ -27,7 +27,8 @@ int sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 		return (-1);
 
 	return_val = 0;
-	
+	g_time_out = 0;
+
 	action.sa_handler = alarm_handler;
 	action.sa_flags = 0;
 	sigfillset (&action.sa_mask);
@@ -43,7 +44,11 @@ int sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 	}
 	
 	if (sigaction (SIGALRM, &action, NULL) == -1)
+	{
+		kill (pid, SIGKILL);
+		waitpid (pid, NULL, 0);
 		return (-1);
+	}
 
 	alarm (timeout);
 
@@ -54,7 +59,7 @@ int sandbox(void (*f)(void), unsigned int timeout, bool verbose)
 			if (kill (pid, SIGKILL) == -1)
 				return_val = -1;
 			if (verbose)
-				printf ("Bad function: timed out after %d seconds\n", timeout);
+				printf ("Bad function: timed out after %u seconds\n", timeout);
 		}
 	}
 
